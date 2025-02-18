@@ -1,5 +1,7 @@
 import pytest
 import requests
+import random
+import sys
 
 API_URL = "http://localhost:4567"
 
@@ -35,6 +37,23 @@ def test_get_projects():
     # Cleanup
     delete_project(project_id)
 
+def test_get_projects_fail():
+    """Test GET /projects when no projects exist (should return an empty list)"""
+    
+    # Get all projects
+    response = requests.get(API_URL + "/projects")
+    if response.status_code == 200 and "projects" in response.json():
+        # Delete all projects one by one
+        for project in response.json()["projects"]:
+            requests.delete(f"{API_URL}/projects/{project['id']}")
+
+    # Now reattempt GET request
+    response = requests.get(API_URL + "/projects")
+    
+    # Expecting 200 with an empty list
+    assert response.status_code == 200, "Expected 200 even if no projects exist"
+    assert response.json() == {"projects": []}, f"Expected an empty projects list, but got {response.json()}"
+
 
 def test_post_projects():
     project_id = create_project("Test Project for POST")
@@ -46,6 +65,33 @@ def test_post_projects():
     # Cleanup
     delete_project(project_id)
 
+def test_post_projects_fail():
+    """Test POST /projects with missing required fields. API unexpectedly allows this, so verify behavior."""
+
+    # Sending an empty JSON body
+    payload = {}
+    response = requests.post(API_URL + "/projects", json=payload)
+
+    # The API allows this (expected 400, but it gives 201)
+    assert response.status_code in [201, 400], (
+    f"Unexpected response: {response.status_code}, response body: {response.json()}")
+
+    # If a project was created, retrieve it and check if it has an ID
+    project_id = response.json().get("id")
+    assert project_id, "API created a project, but no ID was returned"
+
+    # Fetch the project details
+    project_response = requests.get(API_URL + f"/projects/{project_id}")
+    project_data = project_response.json()
+
+    # Since the API allows creation, check if it at least assigned an ID
+    assert "projects" in project_data, "Expected 'projects' key in response"
+    assert len(project_data["projects"]) > 0, "Expected at least one project"
+
+    # Cleanup: Delete the newly created project
+    delete_response = requests.delete(API_URL + f"/projects/{project_id}")
+    assert delete_response.status_code in [200, 204], f"Failed to delete test project {project_id}"
+
 
 def test_head_projects():
     project_id = create_project("Test Project for HEAD")
@@ -55,6 +101,18 @@ def test_head_projects():
 
     # Cleanup
     delete_project(project_id)
+
+def test_head_projects_fail():
+    """Test HEAD /projects when no projects exist (should still return 200)"""
+    # Ensure no projects exist
+    requests.delete(API_URL + "/projects")
+
+    response = requests.head(API_URL + "/projects")
+    
+    # Expecting 200, even if no data exists (HEAD should return only headers)
+    assert response.status_code == 200, "HEAD /projects should return 200 even if empty"
+    assert "Content-Type" in response.headers, "Expected headers in response"
+
 
 ### Testing Unsupported HTTP Methods for /projects
 
@@ -77,19 +135,28 @@ def test_options_projects():
 
 
 
-def test_summary():
+def test_summary(random_order=False):
     ensure_system_ready()
 
     test_functions = [
         test_get_projects,
+        test_get_projects_fail,
         test_post_projects,
+        test_post_projects_fail,
         test_head_projects,
+        test_head_projects_fail,
+        test_delete_projects,
+        test_patch_projects,
+        test_options_projects,
     ]
+    if random_order:
+        random.seed(42)  # Set a fixed seed for reproducibility
+        random.shuffle(test_functions)
 
     passed_tests = 0
     failed_tests = 0
 
-    print("\nExecuting tests:\n")
+    print("\nExecuting tests" + (" in random order" if random_order else " in default order") + ":\n")
     for test in test_functions:
         try:
             test()
@@ -115,10 +182,18 @@ if __name__ == "__main__":
         run_tests = False
 
     if run_tests:
-        test_summary()
-# run the tests and shut down after
+        # Check if --random was provided as a command-line argument
+        random_mode = "--random" in sys.argv
+        test_summary(random_mode)
+
+    # Run tests using pytest
     if run_tests:
-        pytest.main([__file__, "-s"])
+        pytest_args = ["-s"]
+        if random_mode:
+            pytest_args.extend(["--random-order", "--randomly-seed=42"])
+
+        pytest.main([__file__, *pytest_args])
+
         response = requests.get(API_URL)
         assert response.status_code == 200, "API is already shutdown"
         try:

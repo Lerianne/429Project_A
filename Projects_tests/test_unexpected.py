@@ -140,7 +140,7 @@ def test_delete_project_no_confirmation_message():
 
 # ALLOW PASS TESTS
 
-# üTesting ID generation logic for categories linked to projects
+# Testing ID generation logic for categories linked to projects
 def test_post_projects_id_categories_id_generation_allow_pass():
     try:
         # Create a new project
@@ -281,7 +281,18 @@ if __name__ == "__main__":
         run_tests = False
 
     if run_tests:
-        pytest.main([__file__, "-s"])
+        # Check if --random was provided as a command-line argument
+        random_mode = "--random" in sys.argv
+        test_summary(random_mode)
+
+    # Run tests using pytest
+    if run_tests:
+        pytest_args = ["-s"]
+        if random_mode:
+            pytest_args.extend(["--random-order", "--randomly-seed=42"])
+
+        pytest.main([__file__, *pytest_args])
+
         response = requests.get(API_URL)
         assert response.status_code == 200, "API is already shutdown"
         try:
