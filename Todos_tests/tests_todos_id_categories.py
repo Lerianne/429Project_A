@@ -72,5 +72,3 @@ def test_post_categories_maximum_data():
     response = requests.post(BASE_URL, json=category_data)
     assert response.status_code == 200  # Successfully created the relationship
     assert response.json()["category_id"] == 999999999
-
-HELLO

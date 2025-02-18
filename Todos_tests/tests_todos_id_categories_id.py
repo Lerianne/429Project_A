@@ -1,7 +1,7 @@
 import requests
 import pytest
 
-BASE_URL = "http://localhost:5000/todos/1/categories/1"
+BASE_URL = "http://localhost:4567/todos/1/categories/1"
 
 # Test GET /todos/1/categories/1 failure (GET is not allowed)
 def test_get_categories_1_fail():
@@ -26,7 +26,7 @@ def test_delete_categories_1_success():
 
 # Test DELETE /todos/1/categories/1 failure (trying to delete a non-existing relationship)
 def test_delete_categories_1_fail():
-    response = requests.delete("http://localhost:5000/todos/999/categories/1")  # Assuming this todo doesn't exist
+    response = requests.delete("http://localhost:4567/todos/999/categories/1")  # Assuming this todo doesn't exist
     assert response.status_code == 404  # Not Found
 
 # Test OPTIONS /todos/1/categories/1 failure (OPTIONS is not allowed)

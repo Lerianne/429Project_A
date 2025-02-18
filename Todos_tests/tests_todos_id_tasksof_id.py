@@ -1,7 +1,7 @@
 import requests
 import pytest
 
-BASE_URL = "http://localhost:5000/todos/1/tasksof/1"
+BASE_URL = "http://localhost:4567/todos/1/tasksof/1"
 
 # Test GET /todos/1/tasksof/1 failure (GET is not allowed)
 def test_get_tasksof_relationship_fail():
@@ -26,7 +26,7 @@ def test_delete_tasksof_relationship_success():
 
 # Test DELETE /todos/1/tasksof/1 failure (trying to delete a non-existent relationship)
 def test_delete_tasksof_relationship_fail():
-    response = requests.delete("http://localhost:5000/todos/1/tasksof/999")  # Non-existent relationship
+    response = requests.delete("http://localhost:4567/todos/1/tasksof/999")  # Non-existent relationship
     assert response.status_code == 404  # Not Found
 
 # Test OPTIONS /todos/1/tasksof/1 failure (OPTIONS is not allowed)
@@ -52,5 +52,5 @@ def test_delete_tasksof_relationship_minimal():
 
 # Boundary Test: DELETE with a non-existent relationship
 def test_delete_tasksof_relationship_nonexistent():
-    response = requests.delete("http://localhost:5000/todos/1/tasksof/999")
+    response = requests.delete("http://localhost:4567/todos/1/tasksof/999")
     assert response.status_code == 404  # Not Found
