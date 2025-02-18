@@ -1,7 +1,7 @@
 import requests
 import pytest
 
-BASE_URL = "http://localhost:5000/todos"
+BASE_URL = "http://localhost:4567/todos"
 
 # Test GET /todos success (fetch all todos)
 def test_get_todos_success():
